@@ -10,7 +10,7 @@ license = "MIT"
 edition = "2021"
 keywords = ["libvips", "bindgen", "image", "bindings"]
 categories = ["multimedia::images", "multimedia::encoding", "graphics"]
-exclude = ["generator"]
+exclude = ["generator", "examples/*"]
 
 [package.metadata.release]
 pre-release-commit-message = "release version {{version}}"
