@@ -43,8 +43,8 @@ impl VipsApp {
         }
     }
     
-    pub fn get_disc_threshold(&self) -> u64 {
-        unsafe { bindings::vips_get_disc_threshold() }
+    pub fn get_disc_threshold(&self) -> usize {
+        unsafe { bindings::vips_get_disc_threshold() as usize }
     }
     
     pub fn version_string(&self) -> Result<&str> {
@@ -126,7 +126,7 @@ impl VipsApp {
         }
     }
 
-    pub fn cache_set_max_mem(&self, max: u64) {
+    pub fn cache_set_max_mem(&self, max: usize) {
         unsafe {
             bindings::vips_cache_set_max_mem(max);
         }
@@ -138,7 +138,7 @@ impl VipsApp {
         }
     }
 
-    pub fn cache_get_max_mem(&self) -> u64 {
+    pub fn cache_get_max_mem(&self) -> usize {
         unsafe {
             bindings::vips_cache_get_max_mem()
         }
@@ -188,13 +188,13 @@ impl VipsApp {
         }
     }
 
-    pub fn tracked_get_mem(&self) -> u64 {
+    pub fn tracked_get_mem(&self) -> usize {
         unsafe {
             bindings::vips_tracked_get_mem()
         }
     }
 
-    pub fn tracked_get_mem_highwater(&self) -> u64 {
+    pub fn tracked_get_mem_highwater(&self) -> usize {
         unsafe {
             bindings::vips_tracked_get_mem_highwater()
         }
@@ -205,10 +205,10 @@ impl VipsApp {
             bindings::vips_tracked_get_allocs()
         }
     }
-
-    pub fn pipe_read_limit_set(&self, limit: i64) {
+    // `limit` may be i32 or i64 depending on the platform, here isize is used for conversion.
+    pub fn pipe_read_limit_set(&self, limit: isize) {
         unsafe {
-            bindings::vips_pipe_read_limit_set(limit);
+            bindings::vips_pipe_read_limit_set(limit.try_into().unwrap());
         }
     }
 }

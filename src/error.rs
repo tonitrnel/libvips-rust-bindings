@@ -1,4 +1,5 @@
-
+// AUTO-GENERATED DO NOT MODIFY
+// if you want to modify, please modify `generator/build.rs` file.
 #[derive(Debug)]
 pub enum Error {
     InitializationError(&'static str),

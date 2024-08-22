@@ -1,9 +1,11 @@
 # (c) Copyright 2019-2024 OLX
-FROM rust:1.75.0-alpine3.19
+FROM rust:1.80-alpine3.20
 
-ENV VIPS_VERSION=8.15.1
+ENV VIPS_VERSION=8.15.3
 
-RUN apk add --quiet --update --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/v3.19/main \
+RUN apk add --quiet --update --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/v3.20/main \
+  wget\
+  bash\
   build-base \
   pkgconfig \
   clang \
@@ -28,10 +30,17 @@ RUN apk add --quiet --update --no-cache --repository=https://dl-cdn.alpinelinux.
   openssl-dev \
   orc-dev \
   pango-dev \
-  tiff-dev \
-  && wget -q https://github.com/libvips/libvips/releases/download/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.xz \
-  && mkdir vips \
-  && tar xJf vips-${VIPS_VERSION}.tar.xz -C vips --strip-components 1 \
+  tiff-dev
+
+COPY compile.sh /
+COPY introspect.c /
+COPY vips.h /
+
+RUN chmod +x /compile.sh
+
+RUN wget -q https://github.com/libvips/libvips/releases/download/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.xz
+
+RUN mkdir vips && tar xJf vips-${VIPS_VERSION}.tar.xz -C vips --strip-components 1 \
   && cd /vips \
   && meson setup build \
   && cd /vips/build \

@@ -1,7 +1,6 @@
 // (c) Copyright 2019-2024 OLX
 use inflector::Inflector;
 use std::env;
-use std::fs::File;
 use std::io;
 use std::io::Write;
 use std::path::PathBuf;
@@ -175,7 +174,7 @@ impl Operation {
                             format!("{}_in, {}.len() as i32", p.name, p.name)
                         }
                         ParamType::ArrayImage => format!("{}_in.as_mut_ptr()", p.name),
-                        ParamType::ArrayByte => format!("{}_in, {}.len() as u64", p.name, p.name),
+                        ParamType::ArrayByte => format!("{}_in, {}.len()", p.name, p.name),
                         ParamType::Enum { .. } => format!("{}_in.try_into().unwrap()", p.name),
                         ParamType::Str => format!("{}_in.as_ptr()", p.name),
                         _ => format!("{}_in", p.name),
@@ -312,7 +311,7 @@ impl Operation {
                     self.declaration(true),
                     self.method_body(true)
                 )
-                .as_str(),
+                    .as_str(),
             );
         }
         main
@@ -551,7 +550,7 @@ impl Parameter {
     fn declare_out_variable(&self) -> String {
         match self.param_type {
             ParamType::ArrayByte { .. } => format!(
-                "let mut {}_buf_size: u64 = 0;\nlet mut {}_out: {} = null_mut();",
+                "let mut {}_buf_size = 0;\nlet mut {}_out: {} = null_mut();",
                 self.name,
                 self.name,
                 self.param_type.vips_out_type()
@@ -1184,6 +1183,7 @@ fn rustfmt_generated_strin(source: &str) -> io::Result<String> {
     }
 }
 
+#[cfg(target_os = "linux")]
 fn main() {
     let operation_blacklist = [
         "VipsForeignSaveDzBuffer",
@@ -1207,16 +1207,7 @@ fn main() {
 
     let mut generator = bindgen::Builder::default()
         .header("vips.h")
-        /*
-        The previous version of bindgen(v0.53) that was used to generate the bindings had the
-        following parameter (size_t_is_usize) set to false by default. In the current
-        release (v.0.63.0) it is set to true by default which might actually make sense as
-        usize could be a better alternative for size_t. For the sake of backward compatibility I've
-        explicitly set it to false thus we'll have the same bindings output. Later we can look into
-        converting this crate to use `usize` for `size_t`.
-        More details are available here: https://github.com/rust-lang/rust-bindgen/issues/1901
-         */
-        .size_t_is_usize(false)
+        .size_t_is_usize(true)
         .blocklist_type("max_align_t")
         .blocklist_item("FP_NAN")
         .blocklist_item("FP_INFINITE")
@@ -1252,8 +1243,13 @@ fn main() {
         .to_command();
     let result = cc_cmd.arg("introspect.c").status();
     if result.is_ok() && !result.unwrap().success() {
-        let mut cmd = Command::new("./compile.sh");
-        let res = cmd.status().expect("Couldn't compile introspect.c");
+        let root = env::current_dir().unwrap();
+        let compile_sh_path = root.join("./compile.sh");
+        if !compile_sh_path.exists() || !compile_sh_path.is_file() {
+            panic!("compile.sh does not exist.")
+        }
+        let mut cmd = Command::new(&compile_sh_path);
+        let res = cmd.status().unwrap_or_else(|err| panic!("Couldn't compile introspect.c, reason: {err:?}"));
         if !res.success() {
             panic!("Failed to compile introspect.c");
         }
@@ -1290,7 +1286,7 @@ fn main() {
                         operation.name.to_class_case(),
                         operation.name.to_class_case()
                     )
-                    .as_str(),
+                        .as_str(),
                 );
                 (methods, errors, errors_display)
             },
@@ -1309,6 +1305,8 @@ fn main() {
     let ops_content = format!(
         r#"
     // (c) Copyright 2019-2024 OLX
+    // AUTO-GENERATED DO NOT MODIFY
+    // if you want to modify, please modify `generator/build.rs` file.
     use std::ffi::*;
     use std::ptr::null_mut;
     use std::convert::TryInto;
@@ -1334,6 +1332,8 @@ fn main() {
 
     let errors_content = format!(
         r#"
+    // AUTO-GENERATED DO NOT MODIFY
+    // if you want to modify, please modify `generator/build.rs` file.
     #[derive(Debug)]
     pub enum Error {{
         InitializationError(&'static str),
@@ -1384,4 +1384,8 @@ fn main() {
     file_errs
         .write_all(errors_formated.as_bytes())
         .expect("Can't write to file");
+}
+
+#[cfg(not(target_os = "linux"))]
+fn main(){
 }

@@ -85,8 +85,8 @@ pub(crate) fn new_c_string(string: &str) -> Result<CString> {
 }
 
 #[inline]
-pub(crate) unsafe fn new_byte_array(buf: *mut c_void, size: u64) -> Vec<u8> {
-    Vec::from_raw_parts(buf as *mut u8, size as usize, size as usize)
+pub(crate) unsafe fn new_byte_array(buf: *mut c_void, size: usize) -> Vec<u8> {
+    Vec::from_raw_parts(buf as *mut u8, size, size)
 }
 
 #[inline]
