@@ -162,6 +162,12 @@ impl VipsApp {
         }
     }
 
+    pub fn cache_drop_all(&self){
+        unsafe {
+            bindings::vips_cache_drop_all()
+        }
+    }
+
     pub fn vips_cache_set_dump(&self, flag: bool) {
         unsafe {
             bindings::vips_cache_set_dump(if flag { 1 } else { 0 });
