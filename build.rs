@@ -2,7 +2,7 @@
 fn main() {
     #[cfg(target_os = "windows")]
     {
-        //
+        use std::path::PathBuf;
         // Get the binaries for Windows from the link below.
         // https://github.com/libvips/build-win64-mxe/releases/
         //
@@ -12,7 +12,14 @@ fn main() {
         let path_entries = path_var.split(';')
             .collect::<Vec<&str>>();
         let dll_path = match path_entries.iter().find(|it| it.contains("libvips\\bin")) {
-            Some(dll_path) => dll_path,
+            #[cfg(target_env = "gnu")]
+            Some(dll_path) => {
+                PathBuf::from(dll_path)
+            }
+            #[cfg(target_env = "msvc")]
+            Some(dll_path) => {
+                PathBuf::from(dll_path).parent().unwrap().join("lib")
+            }
             None => {
                 panic!(
                     "`PATH` environment variable does not include the required directory.\n\
@@ -27,14 +34,25 @@ fn main() {
                 );
             }
         };
-        if !std::path::PathBuf::from(dll_path).exists() {
+        if !dll_path.exists() {
             panic!("The specified directory {dll_path:?} does not exist or could not be found.")
         }
-        println!("cargo:rustc-link-search={dll_path}");
-        println!("cargo:rustc-link-lib=dylib=vips-42");
-        println!("cargo:rustc-link-lib=dylib=glib-2.0-0");
-        println!("cargo:rustc-link-lib=dylib=gobject-2.0-0");
+        #[cfg(target_env = "msvc")]
+        {
+            println!("cargo:rustc-link-search={}", dll_path.display());
+            println!("cargo:rustc-link-lib=dylib=libvips");
+            println!("cargo:rustc-link-lib=dylib=libglib-2.0");
+            println!("cargo:rustc-link-lib=dylib=libgobject-2.0");
+        }
+        #[cfg(target_env = "gnu")]
+        {
+            println!("cargo:rustc-link-search={}", dll_path.display());
+            println!("cargo:rustc-link-lib=dylib=vips-42");
+            println!("cargo:rustc-link-lib=dylib=glib-2.0-0");
+            println!("cargo:rustc-link-lib=dylib=gobject-2.0-0");
+        }
     }
+
     #[cfg(target_os = "linux")]
     {
         println!("cargo:rustc-link-lib=vips");

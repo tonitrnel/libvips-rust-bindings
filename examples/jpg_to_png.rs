@@ -1,5 +1,4 @@
 extern crate libvips;
-extern crate num_complex;
 
 fn main() {
     let app = libvips::VipsApp::new("JPEG to PNG", false).unwrap();
